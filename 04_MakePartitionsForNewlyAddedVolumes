@@ -6,6 +6,8 @@ sudo umount /dev/xvdf  --> first unmount the volume
 
 # sudo umount /Add_volume  --> If it’s mounted with a partition (but looks like it's directly mounted to /dev/xvdf)
 
+fdisk /dev/xvdf
+
 enter m --> then n --> p/e --> 1 --> press enter button for default
  --> press enter button for default --> p --> w
 
