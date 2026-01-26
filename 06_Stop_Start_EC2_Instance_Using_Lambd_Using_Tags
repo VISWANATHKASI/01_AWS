@@ -60,6 +60,41 @@ def lambda_handler(event, context):
 
 
 
+dynamically getting instance ids
+--------------------------------
+
+import boto3
+
+# Initialize outside the handler to take advantage of connection pooling
+region = 'us-east-1'
+ec2 = boto3.client('ec2', region_name=region)
+
+def lambda_handler(event, context):
+    filters = [
+        {'Name': 'instance-state-name', 'Values': ['running']},
+        {'Name': 'tag:stop_start', 'Values': ['yes']}
+    ]
+
+    # Use describe_instances to find matching instances
+    response = ec2.describe_instances(Filters=filters)
+
+    # Use a list comprehension for cleaner extraction of IDs
+    instance_ids = [
+        instance['InstanceId']
+        for reservation in response['Reservations']
+        for instance in reservation['Instances']
+    ]
+
+    if instance_ids:
+        ec2.stop_instances(InstanceIds=instance_ids)
+        print(f"Successfully sent stop command to: {', '.join(instance_ids)}")
+    else:
+        print("No running instances found matching the criteria.")
+
+
+
+
+
 
 Start Function:
 ==============
