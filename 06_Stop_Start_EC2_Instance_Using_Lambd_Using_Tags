@@ -31,89 +31,18 @@ Stop Function:
 =============
 
 
-import boto3  
-region = 'us-east-1'
-instances = ['i-055a2d3e58e34fae1', 'i-050c082d7245a0395','i-0746710d37075fa88']
-ec2 = boto3.client('ec2', region_name=region)
-
-def lambda_handler(event, context):
-    ec2.stop_instances(InstanceIds=instances)
-    print('stopped your instances: ' + str(instances))
-
 
 stopping using tag (stop_start)
 -------------------------------
 
-import boto3
 
-region = 'ap-south-1'
-ec2 = boto3.client('ec2', region_name=region)
-
-def lambda_handler(event, context):
-    """
-    Stops running EC2 instances with a specific tag.
-    """
-    filters = [
-        {'Name': 'instance-state-name', 'Values': ['running']},
-        {'Name': 'tag:stop_start', 'Values': ['yes']}
-    ]
-
-    # Use describe_instances to find matching instances
-    instances_to_stop = ec2.describe_instances(Filters=filters)
-
-    instance_ids = []
-    for reservation in instances_to_stop['Reservations']:
-        for instance in reservation['Instances']:
-            instance_ids.append(instance['InstanceId'])
-
-    if instance_ids:
-        ec2.stop_instances(InstanceIds=instance_ids)
-        print(f"Stopped the following instances: {instance_ids}")
-    else:
-        print("No instances found with the specified tag and state.")
 
 
 
 stopping by hardcoding the instance ids
 ---------------------------------------
 
-import boto3
-# The Durable SDK is required for the v6 runtime
-from aws_durable_execution_sdk_python import durable_execution, DurableContext
 
-# Initialize outside to speed up replays
-ec2 = boto3.client('ec2', region_name='us-east-1')
-
-@durable_execution
-def lambda_handler(event, context: DurableContext):
-    try:
-        # Your hardcoded IDs
-        instance_ids = [
-            'i-055a2d3e58e34fae1',
-            'i-050c082d7245a0395',
-            'i-0746710d37075fa88'
-        ]
-
-        # In Durable runtime, we use 'context.step' to checkpoint work
-        # This prevents the function from trying to stop them again if it retries
-        def stop_action():
-            ec2.stop_instances(InstanceIds=instance_ids)
-            return f"Issued stop for: {instance_ids}"
-
-        # Checkpoint this step
-        result_text = context.step("stop-instances", stop_action)
-        
-        print(result_text)
-
-        # Return the final result
-        return {
-            "output": result_text,
-            "instances": instance_ids
-        }
-
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        raise e # Let the orchestrator handle the failure/retry
 
 
 stopping by dynamically getting instance ids
@@ -171,31 +100,57 @@ def lambda_handler(event, context: DurableContext):
 Start Function:
 ==============
 
+
+
+
+
+stopping by dynamically getting instance ids
+--------------------------------------------
+
 import boto3
+# 1. You must import the Durable SDK components
+from aws_durable_execution_sdk_python import DurableContext, durable_execution
 
-region = 'ap-south-1'
-ec2 = boto3.client('ec2', region_name=region)
+# Initialize client outside
+ec2 = boto3.client('ec2', region_name='us-east-1')
 
-def lambda_handler(event, context):
-    """
-    Stops running EC2 instances with a specific tag.
-    """
-    filters = [
-        {'Name': 'instance-state-name', 'Values': ['stopped']},
-        {'Name': 'tag:stop_start', 'Values': ['yes']}
-    ]
+# 2. Add the @durable_execution decorator
+@durable_execution
+def lambda_handler(event, context: DurableContext):
+    try:
+        filters = [
+            {'Name': 'instance-state-name', 'Values': ['running']},
+            {'Name': 'tag:stop_start', 'Values': ['yes']}
+        ]
 
-    # Use describe_instances to find matching instances
-    instances_to_stop = ec2.describe_instances(Filters=filters)
+        response = ec2.describe_instances(Filters=filters)
+        instance_ids = [
+            i['InstanceId'] 
+            for r in response['Reservations'] 
+            for i in r['Instances']
+        ]
 
-    instance_ids = []
-    for reservation in instances_to_stop['Reservations']:
-        for instance in reservation['Instances']:
-            instance_ids.append(instance['InstanceId'])
+        if instance_ids:
+            ec2.start_instances(InstanceIds=instance_ids)
+            result_text = f"Successfully stopped: {instance_ids}"
+        else:
+            result_text = "No instances matched the filter."
 
-    if instance_ids:
-        ec2.start_instances(InstanceIds=instance_ids)
-        print(f"Stopped the following instances: {instance_ids}")
-    else:
-        print("No instances found with the specified tag and state.")
+        print(result_text)
+
+        # 3. In Durable mode, you return a simple dictionary.
+        # The SDK wrapper handles the "status": "SUCCEEDED" part for you!
+        return {
+            "message": result_text,
+            "instances": instance_ids
+        }
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        # Raising the error here lets the Durable Orchestrator 
+        # handle the "FAILED" status and retries automatically.
+        raise e
+
+
+
 
