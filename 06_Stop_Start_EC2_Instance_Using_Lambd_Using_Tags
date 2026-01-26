@@ -60,7 +60,7 @@ ec2 = boto3.client('ec2', region_name='us-east-1')
 def lambda_handler(event, context: DurableContext):
     try:
         filters = [
-            {'Name': 'instance-state-name', 'Values': ['running']},
+            {'Name': 'instance-state-name', 'Values': ['stopped']},
             {'Name': 'tag:stop_start', 'Values': ['yes']}
         ]
 
