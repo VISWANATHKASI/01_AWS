@@ -104,7 +104,7 @@ Start Function:
 
 
 
-stopping by dynamically getting instance ids
+starting by dynamically getting instance ids
 --------------------------------------------
 
 import boto3
@@ -132,7 +132,7 @@ def lambda_handler(event, context: DurableContext):
 
         if instance_ids:
             ec2.start_instances(InstanceIds=instance_ids)
-            result_text = f"Successfully stopped: {instance_ids}"
+            result_text = f"Successfully started: {instance_ids}"
         else:
             result_text = "No instances matched the filter."
 
