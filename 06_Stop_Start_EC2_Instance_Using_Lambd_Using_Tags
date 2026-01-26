@@ -78,44 +78,43 @@ stopping by hardcoding the instance ids
 ---------------------------------------
 
 import boto3
+# The Durable SDK is required for the v6 runtime
+from aws_durable_execution_sdk_python import durable_execution, DurableContext
 
-# Initialize the client outside the handler
+# Initialize outside to speed up replays
 ec2 = boto3.client('ec2', region_name='us-east-1')
 
-def lambda_handler(event, context):
+@durable_execution
+def lambda_handler(event, context: DurableContext):
     try:
-        # 1. HARDCODE YOUR IDs HERE
-        # Replace these with your actual instance IDs
+        # Your hardcoded IDs
         instance_ids = [
-           'i-055a2d3e58e34fae1',
-           'i-050c082d7245a0395',
-           'i-0746710d37075fa88'
+            'i-055a2d3e58e34fae1',
+            'i-050c082d7245a0395',
+            'i-0746710d37075fa88'
         ]
 
-        # 2. Perform the Stop
-        if instance_ids:
-            # Note: This will attempt to stop ALL IDs in the list.
-            # If an ID is invalid or in a different region, it will throw an error.
+        # In Durable runtime, we use 'context.step' to checkpoint work
+        # This prevents the function from trying to stop them again if it retries
+        def stop_action():
             ec2.stop_instances(InstanceIds=instance_ids)
-            result_text = f"Successfully issued stop command for: {instance_ids}"
-        else:
-            result_text = "No instance IDs provided in the list."
+            return f"Issued stop for: {instance_ids}"
 
+        # Checkpoint this step
+        result_text = context.step("stop-instances", stop_action)
+        
         print(result_text)
 
-        # 3. DURABLE RETURN FORMAT
+        # Return the final result
         return {
-            "status": "SUCCEEDED",
             "output": result_text,
-            "instancesAffected": instance_ids
+            "instances": instance_ids
         }
 
     except Exception as e:
         print(f"Error: {str(e)}")
-        return {
-            "status": "FAILED",
-            "error": str(e)
-        }
+        raise e # Let the orchestrator handle the failure/retry
+
 
 stopping by dynamically getting instance ids
 --------------------------------------------
