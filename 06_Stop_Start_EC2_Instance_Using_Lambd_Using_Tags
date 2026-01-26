@@ -78,32 +78,48 @@ stopping by dynamically getting instance ids
 --------------------------------------------
 
 import boto3
+# 1. You must import the Durable SDK components
+from aws_durable_execution_sdk_python import DurableContext, durable_execution
 
-# Initialize outside the handler to take advantage of connection pooling
-region = 'us-east-1'
-ec2 = boto3.client('ec2', region_name=region)
+# Initialize client outside
+ec2 = boto3.client('ec2', region_name='us-east-1')
 
-def lambda_handler(event, context):
-    filters = [
-        {'Name': 'instance-state-name', 'Values': ['running']},
-        {'Name': 'tag:stop_start', 'Values': ['yes']}
-    ]
+# 2. Add the @durable_execution decorator
+@durable_execution
+def lambda_handler(event, context: DurableContext):
+    try:
+        filters = [
+            {'Name': 'instance-state-name', 'Values': ['running']},
+            {'Name': 'tag:stop_start', 'Values': ['yes']}
+        ]
 
-    # Use describe_instances to find matching instances
-    response = ec2.describe_instances(Filters=filters)
+        response = ec2.describe_instances(Filters=filters)
+        instance_ids = [
+            i['InstanceId'] 
+            for r in response['Reservations'] 
+            for i in r['Instances']
+        ]
 
-    # Use a list comprehension for cleaner extraction of IDs
-    instance_ids = [
-        instance['InstanceId']
-        for reservation in response['Reservations']
-        for instance in reservation['Instances']
-    ]
+        if instance_ids:
+            ec2.stop_instances(InstanceIds=instance_ids)
+            result_text = f"Successfully stopped: {instance_ids}"
+        else:
+            result_text = "No instances matched the filter."
 
-    if instance_ids:
-        ec2.stop_instances(InstanceIds=instance_ids)
-        print(f"Successfully sent stop command to: {', '.join(instance_ids)}")
-    else:
-        print("No running instances found matching the criteria.")
+        print(result_text)
+
+        # 3. In Durable mode, you return a simple dictionary.
+        # The SDK wrapper handles the "status": "SUCCEEDED" part for you!
+        return {
+            "message": result_text,
+            "instances": instance_ids
+        }
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        # Raising the error here lets the Durable Orchestrator 
+        # handle the "FAILED" status and retries automatically.
+        raise e
 
 
 
