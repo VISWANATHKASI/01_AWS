@@ -74,6 +74,49 @@ def lambda_handler(event, context):
 
 
 
+stopping by hardcoding the instance ids
+---------------------------------------
+
+import boto3
+
+# Initialize the client outside the handler
+ec2 = boto3.client('ec2', region_name='us-east-1')
+
+def lambda_handler(event, context):
+    try:
+        # 1. HARDCODE YOUR IDs HERE
+        # Replace these with your actual instance IDs
+        instance_ids = [
+           'i-055a2d3e58e34fae1',
+           'i-050c082d7245a0395',
+           'i-0746710d37075fa88'
+        ]
+
+        # 2. Perform the Stop
+        if instance_ids:
+            # Note: This will attempt to stop ALL IDs in the list.
+            # If an ID is invalid or in a different region, it will throw an error.
+            ec2.stop_instances(InstanceIds=instance_ids)
+            result_text = f"Successfully issued stop command for: {instance_ids}"
+        else:
+            result_text = "No instance IDs provided in the list."
+
+        print(result_text)
+
+        # 3. DURABLE RETURN FORMAT
+        return {
+            "status": "SUCCEEDED",
+            "output": result_text,
+            "instancesAffected": instance_ids
+        }
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return {
+            "status": "FAILED",
+            "error": str(e)
+        }
+
 stopping by dynamically getting instance ids
 --------------------------------------------
 
