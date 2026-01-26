@@ -30,6 +30,9 @@ Policy to attach to role:
 Stop Function:
 =============
 
+stopping using tag (stop_start)
+-------------------------------
+
 import boto3
 
 region = 'ap-south-1'
@@ -60,8 +63,8 @@ def lambda_handler(event, context):
 
 
 
-dynamically getting instance ids
---------------------------------
+stopping by dynamically getting instance ids
+--------------------------------------------
 
 import boto3
 
