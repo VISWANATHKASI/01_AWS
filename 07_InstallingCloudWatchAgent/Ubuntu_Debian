@@ -23,12 +23,30 @@ sudo cat /opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log
 --------------
 
 ls -l /var/log/cloud-init.log  --> to check owner & group of file
-sudo usermod -aG adm cwagent  --> to add cwagent to adm group.
+sudo usermod -aG adm cwagent  --> to add cwagent to adm group if it belongs to adm group
+     or 
+sudo usermod -aG root cwagent  --> to add cwagent to root group if it belongs to root group
+
+
+#to apply the changes
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+
+#to restart the cloudwatch agent
+sudo systemctl restart amazon-cloudwatch-agent
+
+
 
 or edit user in below file
-sudo nano /opt/aws/amazon-cloudwatch-agent/bin/config.json
+--------------------------
+sudo vi /opt/aws/amazon-cloudwatch-agent/bin/config.json
 
 "agent": {
   "metrics_collection_interval": 60,
   "run_as_user": "root"
 }
+
+#to apply the changes
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json -s
+
+#to restart the cloudwatch agent
+sudo systemctl restart amazon-cloudwatch-agent
