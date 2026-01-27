@@ -27,7 +27,7 @@ Policy to attach to role:
 
 
 
-Stop Function:
+Stop Function:  (Python 3.10)
 =============
 
 stopping using tag (stop_start)
@@ -85,7 +85,7 @@ def lambda_handler(event, context):
         print("No instance IDs provided.")
 
 
-Start Function:
+Start Function:  (Python 3.10)
 ==============
 
 starting using tag (stop_start)
