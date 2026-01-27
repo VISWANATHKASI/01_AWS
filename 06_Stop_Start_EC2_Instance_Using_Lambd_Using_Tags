@@ -88,56 +88,61 @@ def lambda_handler(event, context):
 Start Function:
 ==============
 
-
-
-
-
-starting by dynamically getting instance ids
---------------------------------------------
+starting using tag (stop_start)
+-------------------------------
 
 import boto3
-# 1. You must import the Durable SDK components
-from aws_durable_execution_sdk_python import DurableContext, durable_execution
 
-# Initialize client outside
-ec2 = boto3.client('ec2', region_name='us-east-1')
+region = 'us-east-1'
+ec2 = boto3.client('ec2', region_name=region)
 
-# 2. Add the @durable_execution decorator
-@durable_execution
-def lambda_handler(event, context: DurableContext):
-    try:
-        filters = [
-            {'Name': 'instance-state-name', 'Values': ['stopped']},
-            {'Name': 'tag:stop_start', 'Values': ['yes']}
-        ]
+def lambda_handler(event, context):
+    """
+    Starts stopped EC2 instances with a specific tag.
+    """
+    filters = [
+        {'Name': 'instance-state-name', 'Values': ['stopped']},
+        {'Name': 'tag:stop_start', 'Values': ['yes']}
+    ]
 
-        response = ec2.describe_instances(Filters=filters)
-        instance_ids = [
-            i['InstanceId'] 
-            for r in response['Reservations'] 
-            for i in r['Instances']
-        ]
+    # Use describe_instances to find matching instances
+    instances_to_start = ec2.describe_instances(Filters=filters)
 
-        if instance_ids:
-            ec2.start_instances(InstanceIds=instance_ids)
-            result_text = f"Successfully started: {instance_ids}"
-        else:
-            result_text = "No instances matched the filter."
+    instance_ids = []
+    for reservation in instances_to_start['Reservations']:
+        for instance in reservation['Instances']:
+            instance_ids.append(instance['InstanceId'])
 
-        print(result_text)
+    if instance_ids:
+        ec2.start_instances(InstanceIds=instance_ids)
+        print(f"Started the following instances: {instance_ids}")
+    else:
+        print("No instances found with the specified tag and state.")
 
-        # 3. In Durable mode, you return a simple dictionary.
-        # The SDK wrapper handles the "status": "SUCCEEDED" part for you!
-        return {
-            "message": result_text,
-            "instances": instance_ids
-        }
 
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        # Raising the error here lets the Durable Orchestrator 
-        # handle the "FAILED" status and retries automatically.
-        raise e
+
+stopping by hardcoding the instance ids
+---------------------------------------
+
+import boto3
+
+region = 'us-east-1'
+ec2 = boto3.client('ec2', region_name=region)
+
+def lambda_handler(event, context):
+    """
+    Starts specific hardcoded EC2 instances.
+    """
+    # Hardcode your instance IDs in this list
+    instance_ids = ['i-0d2bf93b75db30ea5', 'i-05c9890b7f18fb272']
+
+    if instance_ids:
+        ec2.start_instances(InstanceIds=instance_ids)
+        print(f"Started the following instances: {instance_ids}")
+    else:
+        print("No instance IDs provided.")
+
+
 
 
 
