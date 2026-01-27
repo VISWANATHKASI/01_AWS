@@ -21,7 +21,13 @@ sudo cat /opt/aws/amazon-cloudwatch-agent/logs/amazon-cloudwatch-agent.log
 ----------------------------
 
 ls -l /var/log/cloud-init.log  --> to check owner & group of file
-sudo usermod -aG adm cwagent  --> to add cwagent to adm group.
+sudo usermod -aG adm cwagent  --> to add cwagent to adm group if it belongs to adm group
+     or 
+sudo usermod -aG root cwagent  --> to add cwagent to root group if it belongs to root group
+
+sudo systemctl restart amazon-cloudwatch-agent
+
+
 
 or edit user in below file
 sudo nano /opt/aws/amazon-cloudwatch-agent/bin/config.json
