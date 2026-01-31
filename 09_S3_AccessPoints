@@ -1,0 +1,67 @@
+Minimal Policy to be attached to the user:
+=========================================
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "VisualEditor0",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetAccessPoint",
+                "s3:ListAllMyBuckets",
+                "s3:ListAccessPoints",
+                "s3:GetMultiRegionAccessPoint",
+                "s3:ListBucket"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+
+
+Permissions to be updated in bucket
+===================================
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "*"  // to allow all users
+            },
+            "Action": "*",
+            "Resource": [
+                "arn:aws:s3:::viswa-pub-bucket-1",
+                "arn:aws:s3:::viswa-pub-bucket-1/*"
+            ],
+            "Condition": {
+                "StringEquals": {
+                    "s3:DataAccessPointAccount": "487829047209"
+                }
+            }
+        }
+    ]
+}
+
+
+Access point Policy:
+===================
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::487829047209:user/datauser1"   //which user to be access from this access point
+            },
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject"
+            ],
+            "Resource": "arn:aws:s3:us-east-1:487829047209:accesspoint/datauser1-ap/object/css/*"    // css is prefix/subfolder in bucket, datauser1-ap is access point name
+        }
+    ]
+}
