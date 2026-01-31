@@ -23,8 +23,8 @@ Policy to be updated in bucket policy:
             "Effect": "Allow",
             "Principal": {
                 "AWS": [
-                    "arn:aws:iam::123456789012:user/viswa",
-                    "arn:aws:iam::123456789012:user/user1"
+                    "arn:aws:iam::487829047209:user/viswa",
+                    "arn:aws:iam::487829047209:user/user1"
                 ]
             },
             "Action": "s3:*",
