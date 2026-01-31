@@ -1,3 +1,20 @@
+IAM Policy to be attached to User:
+----------------------------------
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": ["s3:ListAllMyBuckets", "s3:GetAccountPublicAccessBlock"],
+            "Resource": "*"
+        }
+    ]
+}
+
+
+
+Policy to be updated in bucket policy:
+-------------------------------------
 {
     "Version": "2012-10-17",
     "Statement": [
