@@ -1,0 +1,28 @@
+below policy has been created using policy generator. It needs to be updated in s3 bucket policy:
+-------------------------------------------------------------------------------------------------
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "Statement1",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": [
+                "s3:ListBucket",
+                "s3:GetObject",
+                "s3:PutObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::viswa-pub-bkt-1",
+                "arn:aws:s3:::viswa-pub-bkt-1/*"
+            ],
+            "Condition": {
+                "IpAddress": {
+                    "aws:SourceIp": "205.254.168.237"
+                }
+            }
+        }
+    ]
+}
+
+
